@@ -433,7 +433,7 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold mb-4">Matérias Disponíveis</h2>
-                         <p class="text-sm text-gray-500 mb-4">Arraste uma matéria para a "Barra Lateral". Para usar no feed, selecione dentro de um "Bloco".</p>
+                         <p class="text-sm text-gray-500 mb-4">Arraste uma matéria para a "Barra Lateral". Para usar no feed, selecione dentro de um "Bloco". Use os ícones <i class="fas fa-edit"></i> e <i class="fas fa-trash"></i> para gerenciar.</p>
                         <div id="available-articles-list" class="drop-zone bg-gray-100 p-4 rounded-lg min-h-[200px] space-y-3 max-h-[400px] overflow-y-auto no-scrollbar">
                             <!-- Itens disponíveis aqui -->
                         </div>
@@ -574,7 +574,8 @@
         let quill; // Instância global do Quill
         let charts = {}; // Para armazenar instâncias de gráficos
         let currentAdminArticles = [];
-        let updateAvailableArticles;
+        // updateAvailableArticles agora é definida dentro de renderAdminArticlesList
+        let localUpdateAvailableArticles = () => {};
 
 
         // --- ROTEADOR ---
@@ -802,7 +803,7 @@
         const renderAdminArticlesList = async (container) => {
             if (!renderTemplate('admin-articles-list-template', container)) return;
             
-            const articlesSnapshot = await getDocs(query(articlesCollection, where('published', '==', true)));
+            const articlesSnapshot = await getDocs(articlesCollection); // Buscar todas, incluindo não publicadas para gerenciar
             currentAdminArticles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.title.localeCompare(b.title));
             
             const orderSnap = await getDoc(doc(db, 'settings', 'homepageOrder'));
@@ -841,9 +842,9 @@
                 `;
                 div.querySelector('.remove-block-btn').addEventListener('click', () => {
                     div.remove();
-                    updateAvailableArticles();
+                    localUpdateAvailableArticles(); // Use the local function
                 });
-                div.querySelectorAll('select').forEach(sel => sel.addEventListener('change', updateAvailableArticles));
+                div.querySelectorAll('select').forEach(sel => sel.addEventListener('change', localUpdateAvailableArticles)); // Use the local function
                 return { element: div, primaryId, secondaryId };
             };
 
@@ -852,11 +853,29 @@
                 div.className = 'draggable bg-white p-3 rounded-lg shadow border flex justify-between items-center';
                 div.setAttribute('draggable', 'true');
                 div.dataset.id = article.id;
-                div.innerHTML = `<span class="font-medium text-sm">${article.title}</span><i class="fas fa-grip-vertical text-gray-400"></i>`;
+                // Add Edit and Delete buttons here
+                div.innerHTML = `
+                    <span class="font-medium text-sm flex-grow mr-2">${article.title}</span>
+                    <div class="flex items-center gap-2 text-gray-400 flex-shrink-0">
+                        <a href="#/admin/articles/${article.id}" class="hover:text-green-600" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="delete-article-btn hover:text-red-600" title="Excluir" data-id="${article.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <i class="fas fa-grip-vertical cursor-move"></i>
+                    </div>`;
+                // Add event listener for delete button inside this function
+                 div.querySelector('.delete-article-btn').addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent drag from starting
+                    const articleId = e.currentTarget.dataset.id;
+                    await deleteArticle(articleId, true); // Pass true to indicate deletion from list view
+                });
                 return div;
             };
 
-            updateAvailableArticles = () => {
+            // Define the update function locally
+            localUpdateAvailableArticles = () => {
                 const usedInBlocks = new Set();
                 document.querySelectorAll('.feed-block').forEach(block => {
                     const primary = block.querySelector('.primary-article-select').value;
@@ -922,12 +941,12 @@
                 if (article) sidebarList.appendChild(createArticleItemHTML(article));
             });
 
-            updateAvailableArticles();
+            localUpdateAvailableArticles(); // Initial call using the local function
             document.getElementById('add-feed-block-btn').addEventListener('click', () => {
                 const blockCount = document.querySelectorAll('.feed-block').length;
                 const { element } = createAdminFeedBlockHTML({}, blockCount);
                 feedBlocksContainer.appendChild(element);
-                updateAvailableArticles();
+                localUpdateAvailableArticles(); // Use the local function
             });
 
             document.getElementById('save-order-btn').addEventListener('click', saveHomepageOrder);
@@ -994,7 +1013,7 @@
             if (id) {
                 editorTitle.textContent = 'Editar Matéria';
                 deleteBtn.classList.remove('hidden');
-                deleteBtn.addEventListener('click', () => deleteArticle(id));
+                deleteBtn.addEventListener('click', () => deleteArticle(id)); // Delete from editor page
 
                 const docSnap = await getDoc(doc(db, 'articles', id));
                 if (docSnap.exists()) {
@@ -1096,12 +1115,19 @@
             }
         };
 
-        const deleteArticle = async (id) => {
+        const deleteArticle = async (id, fromList = false) => {
+             // Use default confirm dialog
             if (confirm('Tem certeza que deseja excluir esta matéria? Esta ação não pode ser desfeita.')) {
                 try {
                     await deleteDoc(doc(db, 'articles', id));
                     showToast('Matéria excluída com sucesso!', 'bg-green-500');
-                    location.hash = '#/admin/articles';
+                    if (fromList) {
+                        // Remove from current list and update UI
+                        currentAdminArticles = currentAdminArticles.filter(article => article.id !== id);
+                        localUpdateAvailableArticles(); // Use the local function to refresh the lists
+                    } else {
+                         location.hash = '#/admin/articles'; // Redirect if deleting from editor
+                    }
                 } catch (error) { showToast('Erro ao excluir matéria.', 'bg-red-500'); }
             }
         };
@@ -1114,6 +1140,7 @@
                 if (item.classList.contains('disabled')) return;
                 item.addEventListener('dragstart', (e) => {
                     draggedItem = e.target.closest('.draggable');
+                     if(!draggedItem) return; // Add check if closest returns null
                     setTimeout(() => {
                         if (draggedItem) draggedItem.classList.add('dragging');
                     }, 0);
@@ -1131,6 +1158,7 @@
                     e.preventDefault();
                     if (!draggedItem) return;
 
+                     // Add null check for draggedItem.parentElement
                     if (container.id !== 'available-articles-list' || (draggedItem.parentElement && draggedItem.parentElement.id !== 'available-articles-list')) {
                         container.classList.add('drag-over');
                     }
@@ -1146,8 +1174,9 @@
                 container.addEventListener('drop', (e) => {
                     e.preventDefault();
                     container.classList.remove('drag-over');
-                    if (updateAvailableArticles) {
-                         updateAvailableArticles(); 
+                    // Check if localUpdateAvailableArticles is a function before calling
+                    if (typeof localUpdateAvailableArticles === 'function') {
+                         localUpdateAvailableArticles(); 
                     }
                 });
             });
