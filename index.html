@@ -574,8 +574,8 @@
         let quill; // Instância global do Quill
         let charts = {}; // Para armazenar instâncias de gráficos
         let currentAdminArticles = [];
-        // updateAvailableArticles agora é definida dentro de renderAdminArticlesList
-        let localUpdateAvailableArticles = () => {};
+        // Definir a função no escopo global para que possa ser acessada
+        window.updateAvailableArticles = () => {};
 
 
         // --- ROTEADOR ---
@@ -842,9 +842,9 @@
                 `;
                 div.querySelector('.remove-block-btn').addEventListener('click', () => {
                     div.remove();
-                    localUpdateAvailableArticles(); // Use the local function
+                    window.updateAvailableArticles(); // Use the global function
                 });
-                div.querySelectorAll('select').forEach(sel => sel.addEventListener('change', localUpdateAvailableArticles)); // Use the local function
+                div.querySelectorAll('select').forEach(sel => sel.addEventListener('change', window.updateAvailableArticles)); // Use the global function
                 return { element: div, primaryId, secondaryId };
             };
 
@@ -874,8 +874,8 @@
                 return div;
             };
 
-            // Define the update function locally
-            localUpdateAvailableArticles = () => {
+            // Define the update function on the window object
+            window.updateAvailableArticles = () => {
                 const usedInBlocks = new Set();
                 document.querySelectorAll('.feed-block').forEach(block => {
                     const primary = block.querySelector('.primary-article-select').value;
@@ -941,12 +941,12 @@
                 if (article) sidebarList.appendChild(createArticleItemHTML(article));
             });
 
-            localUpdateAvailableArticles(); // Initial call using the local function
+            window.updateAvailableArticles(); // Initial call using the global function
             document.getElementById('add-feed-block-btn').addEventListener('click', () => {
                 const blockCount = document.querySelectorAll('.feed-block').length;
                 const { element } = createAdminFeedBlockHTML({}, blockCount);
                 feedBlocksContainer.appendChild(element);
-                localUpdateAvailableArticles(); // Use the local function
+                window.updateAvailableArticles(); // Use the global function
             });
 
             document.getElementById('save-order-btn').addEventListener('click', saveHomepageOrder);
@@ -1124,7 +1124,7 @@
                     if (fromList) {
                         // Remove from current list and update UI
                         currentAdminArticles = currentAdminArticles.filter(article => article.id !== id);
-                        localUpdateAvailableArticles(); // Use the local function to refresh the lists
+                        window.updateAvailableArticles(); // Use the global function to refresh the lists
                     } else {
                          location.hash = '#/admin/articles'; // Redirect if deleting from editor
                     }
@@ -1174,9 +1174,9 @@
                 container.addEventListener('drop', (e) => {
                     e.preventDefault();
                     container.classList.remove('drag-over');
-                    // Check if localUpdateAvailableArticles is a function before calling
-                    if (typeof localUpdateAvailableArticles === 'function') {
-                         localUpdateAvailableArticles(); 
+                    // Check if window.updateAvailableArticles is a function before calling
+                    if (typeof window.updateAvailableArticles === 'function') {
+                         window.updateAvailableArticles(); 
                     }
                 });
             });
@@ -1202,45 +1202,54 @@
 
             console.log("Populando banco de dados com notícias de exemplo...");
             const sampleArticles = [
-                { title: "EY fatura 30% mais com projetos em inteligência artificial", subtitle: "Consultoria global aposta em AI para expandir serviços corporativos.", imageUrl: "https://i.postimg.cc/dtc51yDs/Gemini-Generated-Image-dq8bgedq8bgedq8b.png" },
-                { title: "Weg assume controle da Tupi Mob e avança em mobilidade elétrica", subtitle: "Empresa brasileira amplia atuação no setor de veículos elétricos.", imageUrl: "https://i.postimg.cc/43Rcv6kT/Gemini-Generated-Image-dq8bgedq8bgedq8b-1.png" },
-                { title: "Brasil propõe meta global para uso de biocombustíveis", subtitle: "País pleiteia quadruplemento da produção de combustíveis sustentáveis.", imageUrl: "https://i.postimg.cc/wTKsY5MW/Gemini-Generated-Image-dq8bgedq8bgedq8b-2.png" },
-                { title: "Governo avalia incentivos para minerais estratégicos", subtitle: "Medidas visam impulsionar industrialização de recursos para tecnologias verdes.", imageUrl: "https://i.postimg.cc/T2NCV4kh/Gemini-Generated-Image-dq8bgedq8bgedq8b-3.png" },
-                { title: "Nova tecnologia de baterias pode revolucionar mercado", subtitle: "Pesquisadores anunciam avanço que promete o dobro de autonomia.", imageUrl: "https://placehold.co/800x500/3182CE/FFFFFF?text=Bateria" },
-                { title: "Mercado de games deve atingir US$ 200 bilhões em 2026", subtitle: "Crescimento é impulsionado por jogos mobile e serviços de assinatura.", imageUrl: "https://placehold.co/800x500/9333ea/FFFFFF?text=Games" },
-                { title: "Cientistas descobrem nova espécie de primata na Amazônia", subtitle: "O animal foi encontrado em uma área remota e já é considerado em risco.", imageUrl: "https://placehold.co/800x500/16a34a/FFFFFF?text=Natureza" },
-                { title: "Inteligência Artificial agora consegue compor trilhas sonoras", subtitle: "Ferramenta da OpenAI cria músicas baseadas em descrições de cenas.", imageUrl: "https://placehold.co/800x500/f97316/FFFFFF?text=Música+IA" },
-                { title: "Meta anuncia novo headset de realidade virtual com foco em produtividade", subtitle: "Quest 4 Pro promete ser mais leve e poderoso para competir com Vision Pro da Apple.", imageUrl: "https://placehold.co/800x500/8b5cf6/FFFFFF?text=Meta+Quest" },
-                { title: "Startup brasileira recebe aporte de R$ 50 milhões para expandir agritech", subtitle: "Solução usa drones e IA para monitorar lavouras e otimizar o uso de insumos.", imageUrl: "https://placehold.co/800x500/22c55e/FFFFFF?text=Agritech" },
-                { title: "Crise hídrica no Sudeste: especialista alerta para necessidade de racionamento", subtitle: "Nível dos reservatórios está 20% abaixo do esperado para a época do ano.", imageUrl: "https://placehold.co/800x500/0ea5e9/FFFFFF?text=Crise+Hídrica" },
-                { title: "Festival de cinema independente premia produção nacional sobre a Amazônia", subtitle: "Documentário 'Vozes da Floresta' leva o prêmio principal do júri.", imageUrl: "https://placehold.co/800x500/f59e0b/FFFFFF?text=Cinema" },
-                { title: "Como a 'gamificação' está transformando o ambiente de trabalho corporativo", subtitle: "Empresas usam dinâmicas de jogos para aumentar engajamento e produtividade.", imageUrl: "https://placehold.co/800x500/ec4899/FFFFFF?text=Gamificação" },
-                { title: "Chef brasileira ganha prêmio internacional por restaurante sustentável em SP", subtitle: "Menu utiliza apenas ingredientes de produtores locais e combate o desperdício.", imageUrl: "https://placehold.co/800x500/6366f1/FFFFFF?text=Gastronomia" },
-                { title: "ANATEL aprova novo padrão de Wi-Fi 7 para o Brasil; veja o que muda", subtitle: "Nova tecnologia promete velocidades até 3 vezes maiores e menor latência.", imageUrl: "https://placehold.co/800x500/14b8a6/FFFFFF?text=Wi-Fi+7" },
-                { title: "Bolsa de Valores opera em alta com otimismo do mercado externo", subtitle: "Índice Ibovespa sobe 1.5% impulsionado por ações de commodities.", imageUrl: "https://placehold.co/800x500/ef4444/FFFFFF?text=B3" },
-                { title: "Telescópio James Webb descobre galáxia mais distante já observada", subtitle: "Objeto cósmico pode reescrever o que sabemos sobre o início do universo.", imageUrl: "https://placehold.co/800x500/0f172a/FFFFFF?text=Cosmos" },
-                { title: "Carro elétrico popular chega ao Brasil com promessa de preço acessível", subtitle: "Novo modelo de montadora chinesa pode custar menos de R$ 100 mil.", imageUrl: "https://placehold.co/800x500/f59e0b/FFFFFF?text=Carro+Elétrico" },
-                { title: "Cientistas desenvolvem plástico biodegradável a partir de algas marinhas", subtitle: "Inovação pode ser a chave para combater a poluição dos oceanos.", imageUrl: "https://placehold.co/800x500/10b981/FFFFFF?text=Sustentável" },
-                { title: "Governo lança novo programa de crédito para microempreendedores", subtitle: "Iniciativa visa facilitar o acesso a recursos para pequenos negócios.", imageUrl: "https://placehold.co/800x500/7c3aed/FFFFFF?text=Economia" },
-                { title: "Série baseada em livro de autor brasileiro estreia com aclamação da crítica", subtitle: "Produção é elogiada pela fidelidade à obra original e atuações.", imageUrl: "https://placehold.co/800x500/be123c/FFFFFF?text=Cultura+Pop" },
-                { title: "Pesquisa aponta que trabalho remoto híbrido é o modelo preferido", subtitle: "Flexibilidade e qualidade de vida são os principais motivos para a preferência.", imageUrl: "https://placehold.co/800x500/475569/FFFFFF?text=Trabalho" },
-                { title: "Final de eSports quebra recorde de audiência com 5 milhões de espectadores", subtitle: "Campeonato de 'Legacy of Valor' consolida o Brasil como potência no cenário.", imageUrl: "https://placehold.co/800x500/d946ef/FFFFFF?text=eSports" },
-                { title: "Turismo em cidades históricas de Minas Gerais cresce 25% em 2025", subtitle: "Retomada do setor impulsiona economia local e valoriza patrimônio cultural.", imageUrl: "https://placehold.co/800x500/ca8a04/FFFFFF?text=Turismo" },
-                { title: "Amazônia registra queda recorde no desmatamento em 2025", subtitle: "Dados do INPE apontam a menor taxa em 15 anos, resultado de fiscalização intensificada.", imageUrl: "https://placehold.co/800x500/16a34a/FFFFFF?text=Amazônia" },
-                { title: "Real Digital: Banco Central inicia nova fase de testes com grandes varejistas", subtitle: "Moeda digital brasileira, Drex, avança para testes em transações do dia a dia.", imageUrl: "https://placehold.co/800x500/0284c7/FFFFFF?text=Drex" },
-                { title: "Novo marco legal para startups é aprovado no Congresso Nacional", subtitle: "Legislação visa simplificar a criação de empresas de tecnologia e atrair investimentos.", imageUrl: "https://placehold.co/800x500/4f46e5/FFFFFF?text=Startups" },
-                { title: "Fórmula 1 confirma retorno do GP do Brasil a Jacarepaguá em 2027", subtitle: "Rio de Janeiro voltará a sediar a corrida em um circuito totalmente modernizado.", imageUrl: "https://placehold.co/800x500/dc2626/FFFFFF?text=Fórmula+1" },
-                { title: "Inteligência artificial brasileira vence competição de diagnóstico médico", subtitle: "Sistema de universidade federal superou modelos do MIT e de Stanford.", imageUrl: "https://placehold.co/800x500/db2777/FFFFFF?text=IA+Médica" },
-                { title: "Produção de hidrogênio verde no Ceará atrai investimento de 5 bi de euros", subtitle: "Estado se consolida como polo global de energia limpa com novo mega-projeto.", imageUrl: "https://placehold.co/800x500/14b8a6/FFFFFF?text=Hidrogênio" },
-                { title: "Rock in Rio anuncia edição histórica para 2026 com U2 e Pearl Jam", subtitle: "Festival comemora 40 anos com line-up que une clássicos e novas tendências.", imageUrl: "https://placehold.co/800x500/f97316/FFFFFF?text=Rock+in+Rio" },
-                { title: "Brasil lança novo satélite de observação da Amazônia com a Índia", subtitle: "CBERS-6 irá monitorar com mais precisão as mudanças climáticas e a vegetação.", imageUrl: "https://placehold.co/800x500/0891b2/FFFFFF?text=Satélite" },
-                { title: "Mercado imobiliário aquece com queda na taxa de juros", subtitle: "Redução da Selic impulsiona financiamentos e aumenta a venda de imóveis.", imageUrl: "https://placehold.co/800x500/65a30d/FFFFFF?text=Imóveis" },
-                { title: "Pesquisadores da Fiocruz desenvolvem vacina universal contra a dengue", subtitle: "Imunizante demonstrou eficácia contra os quatro sorotipos do vírus em testes.", imageUrl: "https://placehold.co/800x500/0ea5e9/FFFFFF?text=Vacina" },
-                { title: "Exportações do agronegócio brasileiro batem novo recorde no semestre", subtitle: "Soja e carne bovina lideram as vendas para o mercado internacional.", imageUrl: "https://placehold.co/800x500/eab308/FFFFFF?text=Agronegócio" },
-                { title: "Filme brasileiro é selecionado para a competição do Festival de Cannes", subtitle: "Drama social dirigido por cineasta pernambucana disputará a Palma de Ouro.", imageUrl: "https://placehold.co/800x500/7e22ce/FFFFFF?text=Cannes" },
-                { title: "Nova rota turística 'Caminhos da Cachaça' é inaugurada em Minas Gerais", subtitle: "Roteiro integra alambiques históricos e promove o turismo gastronômico.", imageUrl: "https://placehold.co/800x500/b45309/FFFFFF?text=Cachaça" },
-                { title: "Empresa de Manaus se destaca com biojoias feitas de sementes da floresta", subtitle: "Design sustentável ganha mercado internacional e valoriza a cultura local.", imageUrl: "https://placehold.co/800x500/166534/FFFFFF?text=Biojoias" },
-                { title: "Copa do Mundo Feminina de 2027 será sediada no Brasil, anuncia FIFA", subtitle: "País venceu a disputa contra candidatura europeia e sediará o torneio pela primeira vez.", imageUrl: "https://placehold.co/800x500/22c55e/FFFFFF?text=Copa+2027" }
+                // Economia e Negócios
+                { title: "Varejo nacional cresce 5% com reabertura econômica", subtitle: "Setor de vestuário e eletrônicos lidera a recuperação.", imageUrl: "https://placehold.co/800x500/16a34a/FFFFFF?text=Varejo" },
+                { title: "Nova startup de IA brasileira recebe investimento de U$ 50 milhões", subtitle: "Foco da empresa é otimização de logística para o agronegócio.", imageUrl: "https://placehold.co/800x500/22c55e/FFFFFF?text=IA+Startup" },
+                { title: "Bolsa de Valores atinge máxima histórica", subtitle: "Índice impulsionado por commodities e setor financeiro.", imageUrl: "https://placehold.co/800x500/ef4444/FFFFFF?text=Bolsa+Alta" },
+                { title: "Pix se consolida como método de pagamento favorito", subtitle: "Banco Central estuda novas funcionalidades, como pagamentos programados.", imageUrl: "https://placehold.co/800x500/6366f1/FFFFFF?text=PIX" },
+                { title: "Produção de café no Brasil deve bater recorde em 2025", subtitle: "Condições climáticas favoráveis e tecnologia impulsionam safra.", imageUrl: "https://placehold.co/800x500/78350f/FFFFFF?text=Café" },
+                { title: "Indústria automobilística aposta em carros híbridos flex", subtitle: "Modelos que rodam com etanol e eletricidade são a nova tendência.", imageUrl: "https://placehold.co/800x500/475569/FFFFFF?text=Carros" },
+                { title: "Dólar opera em queda e fecha abaixo de R$ 5,00 pela primeira vez no ano", subtitle: "Fluxo de investimento estrangeiro e otimismo local influenciam câmbio.", imageUrl: "https://placehold.co/800x500/10b981/FFFFFF?text=Dólar" },
+                { title: "Mercado Livre anuncia novo centro de distribuição no Nordeste", subtitle: "Investimento de R$ 300 milhões promete agilizar entregas na região.", imageUrl: "https://placehold.co/800x500/facc15/FFFFFF?text=Logística" },
+                { title: "Construção civil prevê crescimento moderado para o próximo semestre", subtitle: "Redução da taxa de juros pode reaquecer financiamentos imobiliários.", imageUrl: "https://placehold.co/800x500/fb923c/FFFFFF?text=Construção" },
+                { title: "OpenAI lança nova versão do GPT com capacidade de análise de vídeo", subtitle: "Modelo GPT-5 promete entender contexto e áudio em tempo real.", imageUrl: "https://placehold.co/800x500/0f172a/FFFFFF?text=IA+GPT-5" },
+
+                // Ciência e Tecnologia
+                { title: "Descoberta de novo supercondutor pode revolucionar a energia", subtitle: "Material opera em temperatura ambiente, um marco para a física.", imageUrl: "https://placehold.co/800x500/3b82f6/FFFFFF?text=Ciência" },
+                { title: "Frota de ônibus elétricos começa a operar em São Paulo", subtitle: "Iniciativa visa reduzir a poluição sonora e do ar na capital.", imageUrl: "https://placehold.co/800x500/10b981/FFFFFF?text=Mobilidade" },
+                { title: "Telescópio espacial detecta água em exoplaneta 'próximo'", subtitle: "Descoberta aumenta as chances de encontrar vida fora da Terra.", imageUrl: "https://placehold.co/800x500/0f172a/FFFFFF?text=Espaço" },
+                { title: "Chip cerebral permite que paciente tetraplégico controle robô", subtitle: "Avanço da neurociência abre portas para novas terapias.", imageUrl: "https://placehold.co/800x500/a855f7/FFFFFF?text=Neurociência" },
+                { title: "Cientistas criam plástico 100% reciclável e biodegradável", subtitle: "Novo composto se decompõe em apenas 6 meses em contato com o solo.", imageUrl: "https://placehold.co/800x500/16a34a/FFFFFF?text=Sustentável" },
+                { title: "Bateria de estado sólido promete 1000 km de autonomia para carros", subtitle: "Tecnologia deve chegar ao mercado em menos de 3 anos.", imageUrl: "https://placehold.co/800x500/3182CE/FFFFFF?text=Bateria" },
+                { title: "Rede 6G: Pesquisadores iniciam os primeiros testes em laboratório", subtitle: "Nova geração de internet móvel promete velocidades terabits por segundo.", imageUrl: "https://placehold.co/800x500/14b8a6/FFFFFF?text=6G" },
+                { title: "Google anuncia expansão de cabos submarinos na América Latina", subtitle: "Projeto 'Firmina' conectará o Brasil aos EUA com maior capacidade.", imageUrl: "https://placehold.co/800x500/4285F4/FFFFFF?text=Google" },
+
+                // Política e Brasil
+                { title: "Governo Federal lança plano de R$ 10 bi para infraestrutura no Norte", subtitle: "Foco será em rodovias e portos para melhorar escoamento da produção.", imageUrl: "https://placehold.co/800x500/f59e0b/FFFFFF?text=Infraestrutura" },
+                { title: "Reforma tributária é aprovada em comissão especial do Senado", subtitle: "Texto segue para votação em plenário; unificação de impostos é ponto-chave.", imageUrl: "https://placehold.co/800x500/065f46/FFFFFF?text=Política" },
+                { title: "Nível dos reservatórios de água no Sudeste atinge 70%", subtitle: "Chuvas de verão recuperam volume, mas estado de alerta é mantido.", imageUrl: "https://placehold.co/800x500/0ea5e9/FFFFFF?text=Reservatórios" },
+                { title: "Plano Nacional de Vacinação terá reforço contra novas variantes", subtitle: "Ministério da Saúde confirma compra de 50 milhões de doses atualizadas.", imageUrl: "https://placehold.co/800x500/0284c7/FFFFFF?text=Vacina" },
+                { title: "Desmatamento na Amazônia cai 40% no último trimestre, diz INPE", subtitle: "Aumento da fiscalização e operações contra garimpo ilegal são citados.", imageUrl: "https://placehold.co/800x500/15803d/FFFFFF?text=Amazônia" },
+                { title: "Congresso discute regulação de inteligência artificial no Brasil", subtitle: "Projeto de lei busca estabelecer limites éticos e uso responsável da tecnologia.", imageUrl: "https://placehold.co/800x500/7e22ce/FFFFFF?text=Regulação+IA" },
+
+                // Cultura e Entretenimento
+                { title: "Anitta anuncia nova turnê mundial com foco na Europa e Ásia", subtitle: "Cantora brasileira expande sua presença no mercado musical internacional.", imageUrl: "https://placehold.co/800x500/ec4899/FFFFFF?text=Música" },
+                { title: "Filme brasileiro 'O Último Cangaço' é aplaudido em Cannes", subtitle: "Produção nacional disputa prêmio na mostra 'Un Certain Regard'.", imageUrl: "https://placehold.co/800x500/7e22ce/FFFFFF?text=Cannes" },
+                { title: "Rock in Rio 2026: Organização confirma Foo Fighters e Dua Lipa", subtitle: "Venda de ingressos para o festival começa no próximo mês.", imageUrl: "https://placehold.co/800x500/f97316/FFFFFF?text=Rock+in+Rio" },
+                { title: "Nova série da Netflix baseada em obra de Machado de Assis vira sucesso", subtitle: "Adaptação de 'Dom Casmurro' é elogiada pela crítica e público.", imageUrl: "https://placehold.co/800x500/e11d48/FFFFFF?text=Streaming" },
+                { title: "Museu do Ipiranga bate recorde de visitação após reabertura", subtitle: "Novas exposições interativas atraem mais de 1 milhão de visitantes.", imageUrl: "https://placehold.co/800x500/b45309/FFFFFF?text=Cultura+SP" },
+                { title: "Mercado de games no Brasil cresce 15% e atrai estúdios internacionais", subtitle: "País se consolida como o maior mercado de jogos da América Latina.", imageUrl: "https://placehold.co/800x500/9333ea/FFFFFF?text=Games" },
+                { title: "Artista de rua brasileiro é convidado para expor no MoMA em NY", subtitle: "Grafiteiro paulistano ganha reconhecimento internacional.", imageUrl: "https://placehold.co/800x500/d946ef/FFFFFF?text=Arte" },
+
+                // Esportes e Mundo
+                { title: "Seleção Brasileira convocada para as eliminatórias da Copa", subtitle: "Técnico anuncia lista com novas caras do futebol europeu.", imageUrl: "https://placehold.co/800x500/059669/FFFFFF?text=Futebol" },
+                { title: "Rayssa Leal conquista mais uma etapa do mundial de skate", subtitle: "Atleta brasileira se isola na liderança do ranking mundial.", imageUrl: "https://placehold.co/800x500/64748b/FFFFFF?text=Skate" },
+                { title: "Tensão na Ásia: China realiza novos exercícios militares", subtitle: "Manobras navais são vistas como resposta a acordos diplomáticos na região.", imageUrl: "https://placehold.co/800x500/dc2626/FFFFFF?text=Mundo" },
+                { title: "Onda de calor na Europa quebra recordes históricos na Espanha e Itália", subtitle: "Cientistas alertam para a frequência de eventos climáticos extremos.", imageUrl: "https://placehold.co/800x500/f97316/FFFFFF?text=Clima" },
+                { title: "Fórmula 1 anuncia novo circuito de rua em Madri para 2027", subtitle: "Espanha terá duas corridas no calendário da principal categoria.", imageUrl: "https://placehold.co/800x500/dc2626/FFFFFF?text=Fórmula+1" },
+                { title: "Cúpula do G20 no Rio de Janeiro discute pobreza e meio ambiente", subtitle: "Líderes mundiais se reúnem com foco em ações climáticas e dívida externa.", imageUrl: "https://placehold.co/800x500/0284c7/FFFFFF?text=G20+Rio" },
+                { title: "Turismo na Grécia se recupera e supera níveis pré-pandemia", subtitle: "Ilhas de Santorini e Mykonos registram lotação máxima.", imageUrl: "https://placehold.co/800x500/2563eb/FFFFFF?text=Turismo" },
+                { title: "EUA e Japão fecham acordo de cooperação em defesa espacial", subtitle: "Parceria visa monitorar satélites e lixo espacial.", imageUrl: "https://placehold.co/800x500/083344/FFFFFF?text=Defesa" }
             ];
 
             const batch = writeBatch(db);
